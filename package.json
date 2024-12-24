@@ -17,6 +17,8 @@
     "@aws-sdk/client-ec2": "^3.0.0",
     "@aws-sdk/client-ssm": "^3.0.0",
     "aws-sdk": "^2.1100.0",
-    "inquirer": "^5.0.1"
+    "inquirer": "^5.0.1",
+    "inquirer-search-list": "^1.2.6",
+    "yargs": "^17.7.2"
   }
 }

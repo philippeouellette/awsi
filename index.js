@@ -6,6 +6,7 @@ const inquirerSearchList = require('inquirer-search-list');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const yargs = require('yargs');
 
 // Register the plugin with inquirer
 inquirer.registerPrompt('search-list', inquirerSearchList);
@@ -50,8 +51,9 @@ async function fetchInstancesFromAWS(region) {
       const instanceName = nameTag ? nameTag.Value : 'Unnamed Instance';
 
       instances.push({
-        name: `${instanceName} (${instance.InstanceId})`,
-        value: instance.InstanceId,
+        instanceId: instance.InstanceId,
+        state: instance.State.Name,
+        name: instanceName,
         description: `Instance ID: ${instance.InstanceId}, State: ${instance.State.Name}`
       });
     });
@@ -69,7 +71,7 @@ async function listInstances(region) {
 
       if (profileCache && Date.now() - profileCache.timestamp < cacheExpiryTime) {
         console.log('Using cached instance data.');
-        return profileCache.instances;
+        return profileCache.instances.filter(instance => instance.state === 'running');
       }
     }
 
@@ -88,7 +90,7 @@ async function listInstances(region) {
 
     fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2), 'utf8');
 
-    return instances;
+    return instances.filter(instance => instance.state === 'running');
   } catch (error) {
     console.error('Error retrieving instances:', error.message);
     return [];
@@ -111,6 +113,26 @@ function startSSMSession(instanceId, region) {
   });
 }
 
+const argv = yargs
+  .option('delete-cache', {
+    alias: 'd',
+    type: 'boolean',
+    description: 'Delete cache for the current AWS profile'
+  })
+  .argv;
+
+if (argv.d || argv['delete-cache']) {
+  try {
+    const profile = process.env.AWS_PROFILE || 'default';
+    const cacheData = fs.existsSync(cacheFilePath) ? JSON.parse(fs.readFileSync(cacheFilePath, 'utf8')) : {};
+    delete cacheData[profile];
+    fs.writeFileSync(cacheFilePath, JSON.stringify(cacheData, null, 2), 'utf8');
+    console.log(`Cache deleted for profile: ${profile}`);
+  } catch (error) {
+    console.error('Error deleting cache:', error.message);
+  }
+}
+
 async function main() {
   process.on('SIGINT', () => {
     console.log('\nSIGINT received. Ignoring in main process...');
@@ -128,7 +150,7 @@ async function main() {
   const instances = await listInstances(region);
 
   if (!instances || instances.length === 0) {
-    console.log('No instances available.');
+    console.log('No active instances available.');
     return;
   }
 
@@ -136,8 +158,8 @@ async function main() {
     {
       type: 'search-list',
       name: 'instanceId',
-      message: 'Start typing to filter instances',
-      choices: instances.map(instance => ({ name: instance.name, value: instance.value })),
+      message: 'Start typing to filter active instances',
+      choices: instances.map(instance => ({ name: `${instance.name} (${instance.instanceId})`, value: instance.instanceId })),
     }
   ]);
 

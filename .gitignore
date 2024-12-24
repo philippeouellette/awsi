@@ -1,3 +1,4 @@
 node_modules
+package-lock.json
 .aws_ec2_cache.json
 .env

@@ -1,0 +1,3 @@
+node_modules
+.aws_ec2_cache.json
+.env

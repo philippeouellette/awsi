@@ -1,0 +1,22 @@
+{
+  "name": "awsi",
+  "version": "0.0.1",
+  "description": "Easily connect to AWS EC2 instances using SSM",
+  "main": "index.js",
+  "homepage": "https://github.com/philippeouellette/awsi",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Philippe Ouellette",
+  "license": "ISC",
+  "bin": {
+    "awsi_prompt": "./index.js",
+    "awsi": "./run.sh"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.0.0",
+    "@aws-sdk/client-ssm": "^3.0.0",
+    "aws-sdk": "^2.1100.0",
+    "inquirer": "^5.0.1"
+  }
+}
